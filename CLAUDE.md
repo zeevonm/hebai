@@ -21,6 +21,11 @@ Config via env vars: `PORT`, `SOURCE_ADDONS` (comma-separated addon base URLs), 
 
 Install in Stremio: `http://127.0.0.1:7860/manifest.json` (works on Desktop/Android; Stremio Web requires HTTPS).
 
+## Deployment
+
+- Production: Render free tier at `https://hebai.onrender.com` (manifest: `/manifest.json`), deploys from GitHub `zeevonm/hebai` `main` branch via [render.yaml](render.yaml). Free instance sleeps after 15 min idle (~1 min cold start).
+- A Hugging Face Space (`zeevonm/HebAi`) was tried first but got permanently stuck in APP_STARTING with no hardware allocated — abandoned, safe to delete.
+
 ## Notes
 
 - Google Translate free endpoint returns an aligned JSON array for multiple `q` params — alignment is verified and mismatches throw + retry.

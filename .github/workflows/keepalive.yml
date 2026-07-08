@@ -1,0 +1,14 @@
+name: keepalive
+
+# Render free tier sleeps after 15 min idle; ping every 10 min keeps it awake.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping manifest
+        run: curl -fsS -m 60 --retry 3 https://hebai.onrender.com/manifest.json > /dev/null
