@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hebai-subs-addon",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 7860,
+      "autoPort": true
+    }
+  ]
+}

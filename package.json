@@ -1,0 +1,12 @@
+{
+  "name": "stremio-hebrew-translate",
+  "version": "1.0.0",
+  "description": "Stremio addon that auto-translates English subtitles to Hebrew on the fly",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

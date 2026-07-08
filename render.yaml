@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: hebai
+    runtime: node
+    plan: free
+    startCommand: node server.js
