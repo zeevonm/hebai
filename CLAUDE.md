@@ -23,7 +23,8 @@ Install in Stremio: `http://127.0.0.1:7860/manifest.json` (works on Desktop/Andr
 
 ## Deployment
 
-- Production: Render free tier at `https://hebai.onrender.com` (manifest: `/manifest.json`), deploys from GitHub `zeevonm/hebai` `main` branch via [render.yaml](render.yaml). Free instance sleeps after 15 min idle (~1 min cold start).
+- Production: Render free tier at `https://hebai.onrender.com` (manifest: `/manifest.json`), deploys from GitHub `zeevonm/hebai` `main` branch via [render.yaml](render.yaml). Free instance sleeps after 15 min idle (~1 min cold start), so the server pings its own public URL (`RENDER_EXTERNAL_URL`, auto-set by Render; override with `SELF_URL`) every 10 min to stay awake.
+- A GitHub Actions cron keepalive was tried and removed: GitHub ran it only every 1–3 h and auto-disabled it after 60 days without commits.
 - A Hugging Face Space (`zeevonm/HebAi`) was tried first but got permanently stuck in APP_STARTING with no hardware allocated — abandoned, safe to delete.
 
 ## Notes
