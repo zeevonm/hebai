@@ -35,6 +35,11 @@ const MAX_SUBS_PER_TITLE = parseInt(process.env.MAX_SUBS || "5", 10);
 const BATCH_SIZE = 100; // cues per Google Translate request
 const CONCURRENCY = 4; // parallel translate requests
 const CACHE_DIR = path.join(__dirname, "cache");
+// Render sets RENDER_EXTERNAL_URL; the free tier sleeps after 15 min without
+// inbound traffic, and a request to our own public URL counts as inbound.
+const SELF_URL = (process.env.SELF_URL || process.env.RENDER_EXTERNAL_URL || "")
+  .replace(/\/+$/, "");
+const SELF_PING_MS = 10 * 60 * 1000;
 
 fs.mkdirSync(CACHE_DIR, { recursive: true });
 console.log(`[boot] cache dir ready at ${CACHE_DIR}`);
@@ -275,8 +280,14 @@ code{background:#222;padding:2px 6px;border-radius:4px;direction:ltr;display:inl
 <body><h1>🇮🇱 כתוביות בעברית — תרגום אוטומטי</h1>
 <p>האדון מושך כתוביות באנגלית מ-OpenSubtitles ומתרגם אותן לעברית בזמן אמת.</p>
 <p><a class="btn" href="stremio://HOST/manifest.json">התקן ב-Stremio</a></p>
-<p>או הוסף ידנית את הכתובת: <code>http://HOST/manifest.json</code></p>
+<p>או הוסף ידנית את הכתובת: <code>BASE/manifest.json</code></p>
 </body></html>`;
+
+function baseUrl(req) {
+  const host = req.headers.host || `127.0.0.1:${PORT}`;
+  const proto = (req.headers["x-forwarded-proto"] || "http").split(",")[0].trim();
+  return { host, base: `${proto}://${host}` };
+}
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -293,8 +304,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === "/" || pathname === "/index.html") {
+      const { host, base } = baseUrl(req);
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(LANDING.replace(/HOST/g, req.headers.host || `127.0.0.1:${PORT}`));
+      return res.end(LANDING.replace(/BASE/g, base).replace(/HOST/g, host));
     }
 
     if (pathname === "/manifest.json") return json(res, MANIFEST);
@@ -303,13 +315,12 @@ const server = http.createServer(async (req, res) => {
     let m = pathname.match(/^\/subtitles\/([^/]+)\/([^/]+)(?:\/(.+?))?\.json$/);
     if (m) {
       const [, type, id, extra] = m;
-      const host = req.headers.host || `127.0.0.1:${PORT}`;
-      const proto = req.headers["x-forwarded-proto"] || "http";
+      const { base } = baseUrl(req);
       const sources = await findEnglishSubs(type, id, extra);
       const subtitles = sources.map((s, i) => ({
         id: `heb-auto-${i + 1}`,
         lang: "heb",
-        url: `${proto}://${host}/translate/${b64urlEncode(s.url)}.srt`,
+        url: `${base}/translate/${b64urlEncode(s.url)}.srt`,
       }));
       console.log(`[subs] ${type}/${id} -> ${subtitles.length} translated option(s)`);
       return json(res, { subtitles });
@@ -347,4 +358,12 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`  Manifest:  http://127.0.0.1:${PORT}/manifest.json`);
   console.log(`  Landing:   http://127.0.0.1:${PORT}/`);
   console.log(`  Sources:   ${SOURCE_ADDONS.join(", ")}`);
+  if (SELF_URL) {
+    console.log(`  Keepalive: pinging ${SELF_URL} every ${SELF_PING_MS / 60000} min`);
+    setInterval(() => {
+      fetchText(`${SELF_URL}/manifest.json`, 30000).catch((e) =>
+        console.warn(`[keepalive] ping failed: ${e.message}`)
+      );
+    }, SELF_PING_MS);
+  }
 });
