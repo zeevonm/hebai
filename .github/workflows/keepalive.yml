@@ -1,10 +1,16 @@
 name: keepalive
 
 # Render free tier sleeps after 15 min idle; ping every 10 min keeps it awake.
+# GitHub disables scheduled workflows after 60 days without repo activity,
+# so the monthly run pushes an empty commit to reset that timer.
 on:
   schedule:
     - cron: "*/10 * * * *"
+    - cron: "17 4 1 * *"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   ping:
@@ -12,3 +18,15 @@ jobs:
     steps:
       - name: Ping manifest
         run: curl -fsS -m 60 --retry 3 https://hebai.onrender.com/manifest.json > /dev/null
+
+  stay-active:
+    if: github.event.schedule == '17 4 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Empty commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keepalive"
+          git push
